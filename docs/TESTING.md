@@ -9,10 +9,11 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-The suite contains 32 data-independent regression tests covering reserved-name
+The suite contains 50 data-independent regression tests covering reserved-name
 routing, fail-closed rejection, deferred state, rollback, persistence failure,
 instrument-state initialisation, configured run conditions, duplicate handling,
-report/state recovery and log-integrity recovery.
+report/state recovery, log-integrity recovery, startup recovery ordering and
+single-page report layout.
 
 ## Data-dependent robustness evaluation
 
@@ -51,16 +52,16 @@ underlying physical measurement.
 
 ## Saved release evidence
 
-- Regression suite: 46/46 passed.
+- Regression suite: 50/50 passed.
 - Robustness and integration evaluation: 28/28 passed.
 - Malformed inputs: 9/9 correctly rejected.
 - No silent errors were detected in the predefined and executed cases.
 - One paired OPM v4/TXT run: 205/205 rows and no differences exceeding the
   predefined tolerances.
 
-The regression count rose from the 32/32 recorded for 0.9.0 because the recovery
-and ingestion fixes added cases. The remaining figures are carried over from the
-0.9.0 snapshot and were not re-run.
+The regression count rose from the 32/32 recorded for 0.9.0 because the recovery,
+ingestion and report-layout fixes added cases. The remaining figures are carried
+over from the 0.9.0 snapshot and were not re-run.
 
 The tests were run by the author/developer. The evidence does not establish
 universal OPM compatibility, independent verification or real-instrument QA

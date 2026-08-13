@@ -11,6 +11,7 @@ duplicate handling and conservative log-integrity semantics.
 """
 import json
 import os
+import re
 import tempfile
 import pytest
 from datetime import datetime
@@ -532,6 +533,47 @@ def test_file_moved_into_folder_is_ingested(tmp_path, monkeypatch):
 def test_recalibration_expiry_clamps_to_month_end(start, months, expected):
     moment = datetime.strptime(start, "%Y-%m-%d")
     assert mp._add_months(moment, months).strftime("%Y-%m-%d") == expected
+
+
+def _pdf_page_count(path):
+    """Count page objects in a ReportLab-produced PDF without extra dependencies."""
+    return len(re.findall(rb"/Type\s*/Page[^s]", path.read_bytes()))
+
+
+_QA_TEXT_SHORT = "Instrument QA calibration has not yet been performed on this unit."
+_QA_TEXT_ATTENTION = (
+    "ATTENTION REQUIRED - a reference-standard run was out of tolerance on "
+    "2026-08-01 (TOC 0.42 C, tol +/-0.30 C). The previous fit is retained for "
+    "reference only and must not be relied on until reviewed.")
+
+
+@pytest.mark.parametrize("filename,qa_text", [
+    ("baseline.txt", _QA_TEXT_SHORT),
+    ("attention.txt", _QA_TEXT_ATTENTION),
+    ("GroupB-Bench4-2026-08-11-run17-repeat-after-recalibration.txt",
+     _QA_TEXT_ATTENTION),
+    # Far longer than any status text the code produces today, so the plot has
+    # to be scaled down rather than merely fitted.
+    ("overflowing.txt", " ".join([_QA_TEXT_ATTENTION] * 3)),
+])
+def test_channel_report_fits_one_page(tmp_path, monkeypatch, filename, qa_text):
+    """The report must stay on one page across the content that varies in height.
+
+    The information table wraps, so QA status text and source-file length decide
+    the overall height. A layout tuned only to the shortest case silently spills
+    onto a second page once an instrument raises a QA alert.
+    """
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    monkeypatch.setattr(mp, "_qa_status_text", lambda calib: qa_text)
+    source = _write_minimal_txt(tmp_path / filename, "1,4-diiodobenzene")
+
+    assert mp.FileHandler().process_file(str(source)) is True
+
+    reports = sorted((tmp_path / "outputs").rglob("*.pdf"))
+    assert len(reports) == 3, "expected one report per channel"
+    for report in reports:
+        assert _pdf_page_count(report) == 1, (
+            f"{filename}: {report.name} spilled onto a second page")
 
 
 class _FakeObserver:

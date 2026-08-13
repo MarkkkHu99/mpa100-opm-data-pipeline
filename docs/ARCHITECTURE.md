@@ -11,8 +11,10 @@ committed manifest and evaluates the file-level label.
 - All other supported runs enter the teaching-channel path.
 
 The teaching path produces three channel reports, three plots and two CSV files.
-It preserves the file-level label but explicitly states that the label is not a
-verified channel identity.
+Each report is a single page; because its height varies with the QA status text
+and label lengths, the plot is sized by rendering the page and reading back the
+page count. It preserves the file-level label but explicitly states that the
+label is not a verified channel identity.
 
 The QA path validates the configured start temperature, stop temperature,
 heating rate, three-capillary agreement and melting ranges before comparing the

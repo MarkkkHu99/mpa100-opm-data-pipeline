@@ -28,6 +28,7 @@ import time
 import json
 import uuid
 import copy
+import io
 import hashlib
 import calendar
 from pathlib import Path
@@ -1211,43 +1212,66 @@ def plot_single_channel(df, save_path, meta, channel):
 # Reports contain instrument-indicated values, the recorded heating rate, the
 # manufacturer accuracy specification, process-stage observations and concise
 # instrument QA-state text. They contain no corrected or extrapolated values.
-def generate_channel_pdf(pdf_path, meta, calib, img_path, ch_data, channel,
-                         ramp=None, run_id=None):
-    doc = SimpleDocTemplate(pdf_path, pagesize=A4,
-                            topMargin=36, bottomMargin=28,
-                            leftMargin=48, rightMargin=48)
+REPORT_IMAGE_SIZE = (430, 240)
+# Report height varies with the QA status text and label lengths, so no fixed
+# plot size keeps every report on one page. Summing measured flowable heights
+# does not predict the rendered layout closely enough to size the plot from it,
+# so each candidate size is rendered and the page count is read back. The first
+# step is the natural size, which is what ordinary reports use.
+_IMAGE_SCALE_STEPS = (1.0, 0.9, 0.8, 0.7, 0.6, 0.5)
+
+
+def _report_doc(target):
+    return SimpleDocTemplate(target, pagesize=A4,
+                             topMargin=28, bottomMargin=22,
+                             leftMargin=48, rightMargin=48)
+
+
+def _build_report_story(meta, calib, img_path, ch_data, channel, image_size,
+                        ramp=None, run_id=None):
+    """Assemble the report flowables for one candidate plot size."""
     styles = getSampleStyleSheet()
     small = styles["Normal"].clone('small'); small.fontSize = 8; small.leading = 10
     note = styles["Normal"].clone('note'); note.fontSize = 8; note.leading = 10
     note.textColor = colors.HexColor("#666666")
+    # Default heading spacing costs about 18 pt each, which is enough to push
+    # the plot onto a second page. The report is meant to be read as one sheet.
+    heading = styles["Heading2"].clone('tightHeading')
+    heading.spaceBefore = 6; heading.spaceAfter = 2
+    title = styles["Title"].clone('tightTitle'); title.spaceAfter = 2
+    # A plain string in a table cell does not wrap, so the longest parameter
+    # names used to overflow into the value column.
+    label = styles["Normal"].clone('label'); label.fontSize = 9; label.leading = 11
     story = []
 
-    story.append(Paragraph(f"Melting Point Report - {channel} Channel", styles["Title"]))
-    story.append(Spacer(1, 6))
+    story.append(Paragraph(f"Melting Point Report - {channel} Channel", title))
+    story.append(Spacer(1, 4))
 
     # ===== Run and channel information =====
-    story.append(Paragraph("Run and Channel Information", styles["Heading2"]))
+    story.append(Paragraph("Run and Channel Information", heading))
     cal_date = calib.config.get("calibration_data", {}).get("date_performed", "PLACEHOLDER")
     qa_calibrated = (calib.curve_status == "measured")
     cal_date_disp = cal_date if (cal_date and cal_date != "PLACEHOLDER") else "not yet performed"
     _v = lambda s: Paragraph(str(s), small)
+    _k = lambda s: Paragraph(str(s), label)
     data = [
         ["Parameter", "Value"],
-        ["File-level label", _v(clean_pdf_text(meta.get("Chemical name", "Unknown")) +
-                                " (not verified as channel identity)")],
-        ["Test Date", _v(parse_acquired_time(meta.get("Acquired on", "Unknown")))],
-        ["Tube / Channel", _v(channel)],
-        ["Source file", _v(clean_pdf_text(meta.get("Source file", "N/A")))],
-        ["Source format", _v(clean_pdf_text(meta.get("Source format", "N/A")))],
-        ["Instrument serial number", _v(clean_pdf_text(
+        [_k("File-level label"), _v(clean_pdf_text(meta.get("Chemical name", "Unknown")) +
+                                    " (not verified as channel identity)")],
+        [_k("Test Date"), _v(parse_acquired_time(meta.get("Acquired on", "Unknown")))],
+        [_k("Tube / Channel"), _v(channel)],
+        [_k("Source file"), _v(clean_pdf_text(meta.get("Source file", "N/A")))],
+        [_k("Source format"), _v(clean_pdf_text(meta.get("Source format", "N/A")))],
+        [_k("Instrument serial number"), _v(clean_pdf_text(
             meta.get("Instrument serial number", "N/A")))],
-        ["Pipeline run ID", _v(clean_pdf_text(run_id or "N/A"))],
-        ["Start / Stop temperature", _v(clean_pdf_text(meta.get("Start temperature", "N/A")) +
-                                     " / " + clean_pdf_text(meta.get("Stop temperature", "N/A")))],
-        ["Heating rate", _v(clean_pdf_text(meta.get("Heating rate", "N/A")))],
-        ["Project QA last performed", _v(cal_date_disp)],
-        ["Project reference-standard QA status", _v(_qa_status_text(calib))],
-        ["Instrument-recorded calibration metadata", _v(
+        [_k("Pipeline run ID"), _v(clean_pdf_text(run_id or "N/A"))],
+        [_k("Start / Stop temperature"),
+         _v(clean_pdf_text(meta.get("Start temperature", "N/A")) +
+            " / " + clean_pdf_text(meta.get("Stop temperature", "N/A")))],
+        [_k("Heating rate"), _v(clean_pdf_text(meta.get("Heating rate", "N/A")))],
+        [_k("Project QA last performed"), _v(cal_date_disp)],
+        [_k("Project reference-standard QA status"), _v(_qa_status_text(calib))],
+        [_k("Instrument-recorded calibration metadata"), _v(
             _instrument_recorded_calibration_text(
                 meta.get("Instrument serial number", "")))],
     ]
@@ -1260,11 +1284,11 @@ def generate_channel_pdf(pdf_path, meta, calib, img_path, ch_data, channel,
         ('GRID', (0, 0), (-1, -1), 1, colors.grey)
     ]))
     story.append(table)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 6))
 
     # ===== Reported clear point, heating rate and manufacturer specification =====
     cc = ch_data.get("clear_reported")
-    story.append(Paragraph("Melting Point Result", styles["Heading2"]))
+    story.append(Paragraph("Melting Point Result", heading))
 
     if cc is None or cc.get("measured") is None:
         result_line = "Clear point not detected for this channel."
@@ -1293,7 +1317,7 @@ def generate_channel_pdf(pdf_path, meta, calib, img_path, ch_data, channel,
         result_color = colors.HexColor("#1565C0")
         result_line = head
 
-    rbox = Table([[Paragraph(result_line, small)]], colWidths=[500])
+    rbox = Table([[Paragraph(result_line, small)]], colWidths=[490])
     rbox.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F1F8E9")),
         ('BOX', (0, 0), (-1, -1), 1.2, result_color),
@@ -1302,10 +1326,10 @@ def generate_channel_pdf(pdf_path, meta, calib, img_path, ch_data, channel,
         ('LEFTPADDING', (0, 0), (-1, -1), 10),
     ]))
     story.append(rbox)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 6))
 
     # ===== Instrument-indicated process-stage observations =====
-    story.append(Paragraph("Measured Points (during melting)", styles["Heading2"]))
+    story.append(Paragraph("Measured Points (during melting)", heading))
     P = lambda s: Paragraph(s, small)
 
     def mval(reported):
@@ -1329,14 +1353,33 @@ def generate_channel_pdf(pdf_path, meta, calib, img_path, ch_data, channel,
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     story.append(t)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 3))
     story.append(Paragraph(
         "Onset and meniscus are stages along the way; only the clear point is reported "
         "as the melting point (US Pharmacopoeia convention).", note))
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 4))
 
-    story.append(Image(img_path, width=430, height=240))
-    doc.build(story)
+    story.append(Image(img_path, width=image_size[0], height=image_size[1]))
+    return story
+
+
+def generate_channel_pdf(pdf_path, meta, calib, img_path, ch_data, channel,
+                         ramp=None, run_id=None):
+    """Write a single-page channel report, shrinking the plot only if needed."""
+    natural_width, natural_height = REPORT_IMAGE_SIZE
+    rendered = None
+    for scale in _IMAGE_SCALE_STEPS:
+        buffer = io.BytesIO()
+        doc = _report_doc(buffer)
+        story = _build_report_story(
+            meta, calib, img_path, ch_data, channel,
+            (natural_width * scale, natural_height * scale), ramp, run_id)
+        doc.build(story)
+        rendered = buffer.getvalue()
+        if doc.page == 1:
+            break
+    with open(pdf_path, "wb") as handle:
+        handle.write(rendered)
 
 
 def _qa_status_text(calib):

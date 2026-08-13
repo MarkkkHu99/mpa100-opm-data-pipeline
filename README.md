@@ -12,7 +12,7 @@ replacement for the instrument manual, laboratory SOPs or authorised maintenance
 
 - reads supported MeltView OPM version 4 files directly;
 - preserves source-file, source-format, SHA-256, instrument-serial and pipeline-run provenance;
-- generates three channel PDFs, three channel plots, `RawData.csv` and `Results.csv`;
+- generates three single-page channel PDFs, three channel plots, `RawData.csv` and `Results.csv`;
 - keeps teaching and reference-standard runs on separate decision paths;
 - rejects unrecognised `QA_` names fail-closed;
 - maintains independent QA state for each instrument serial number;
@@ -79,9 +79,9 @@ python3.12 -m venv .venv
 python -m pytest -q
 ```
 
-The current result is 46/46 regression tests passed; the 0.9.0 snapshot recorded
-32/32 before the recovery and ingestion fixes added further cases. These are
-author/developer-run tests, not independent validation.
+The current result is 50/50 regression tests passed; the 0.9.0 snapshot recorded
+32/32 before the recovery, ingestion and report-layout fixes added further cases.
+These are author/developer-run tests, not independent validation.
 
 ## Process files once
 
@@ -144,7 +144,7 @@ The saved snapshot contains three separately labelled evidence layers:
 
 | Evidence | Saved result | Supported conclusion |
 |---|---:|---|
-| Regression tests | 46/46 passed | The specified routing, transaction, state-lifecycle and recovery cases behaved as designed |
+| Regression tests | 50/50 passed | The specified routing, transaction, state-lifecycle, recovery and report-layout cases behaved as designed |
 | Robustness and integration evaluation | 28/28 passed; 9/9 malformed cases rejected | No silent errors were detected in the predefined and executed cases |
 | One OPM v4/TXT pair | 205/205 rows; no differences exceeded the predefined tolerances | Shared fields in the two vendor output paths were consistent for the examined run |
 

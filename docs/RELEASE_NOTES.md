@@ -17,6 +17,16 @@ is unchanged; every change concerns what happens after an interrupted run.
 - Bookkeeping that runs after a report is published can no longer record the run
   as failed; a surviving journal is settled at the next startup instead.
 
+### Report layout
+
+- A channel report is now a single page. Report height varies with the QA
+  status text and label lengths, so the plot size is chosen by rendering the
+  page and reading back the page count rather than by estimating heights. The
+  full plot size is kept whenever it fits, which is every case the current code
+  can produce.
+- The longest parameter names no longer overflow the information table's label
+  column.
+
 ### Ingestion and dates
 
 - Files published into the watched folder by rename are ingested; previously
@@ -26,7 +36,7 @@ is unchanged; every change concerns what happens after an interrupted run.
 
 ### Evaluation
 
-- 46/46 regression tests passed. The robustness, malformed-input and OPM/TXT
+- 50/50 regression tests passed. The robustness, malformed-input and OPM/TXT
   figures below are unchanged from 0.9.0 and were not re-run.
 
 ## 0.9.0 — 2026-08-11
