@@ -79,7 +79,8 @@ python3.12 -m venv .venv
 python -m pytest -q
 ```
 
-The saved release result is 32/32 regression tests passed. These are
+The current result is 46/46 regression tests passed; the 0.9.0 snapshot recorded
+32/32 before the recovery and ingestion fixes added further cases. These are
 author/developer-run tests, not independent validation.
 
 ## Process files once
@@ -96,7 +97,10 @@ committed `run_manifest.json`.
 
 ## Run the folder watcher
 
-Set deployment-specific paths before starting the watcher:
+The watcher observes exactly one folder: the location MeltView is configured to
+auto-save to. That path is site-specific and is fixed when the instrument is
+commissioned, so it must be supplied at deployment. **The paths below are
+development-stage examples and are not prescribed values.**
 
 ```powershell
 $env:MPA100_MONITOR_FOLDER = "E:\MPA100txt"
@@ -106,8 +110,18 @@ $env:MPA100_PIPELINE_LOG_ROOT = "E:\MPA100_state\pipeline_logs"
 py mpa_pipeline.py
 ```
 
+Two constraints apply when these are replaced with real instrument paths:
+
+- **The monitored folder is not scanned recursively.** Only files written
+  directly into it are ingested; anything saved into a subfolder is ignored.
+- **`MPA100_MONITOR_FOLDER` falls back to a development default.** If it is not
+  set, the watcher creates that default path and observes it rather than
+  refusing to start, so it reports a healthy startup while processing nothing.
+  Before leaving the watcher running, confirm that the folder printed in the
+  startup banner is the instrument's auto-save folder.
+
 `MPA100_QA_TEMPLATE` can point to an approved local copy of the definitions-only
-template. Record the deployed path and configuration version in the laboratory
+template. Record the deployed paths and configuration version in the laboratory
 deployment record.
 
 ## QA administration
@@ -130,7 +144,7 @@ The saved snapshot contains three separately labelled evidence layers:
 
 | Evidence | Saved result | Supported conclusion |
 |---|---:|---|
-| Regression tests | 32/32 passed | The specified routing, transaction, state-lifecycle and recovery cases behaved as designed |
+| Regression tests | 46/46 passed | The specified routing, transaction, state-lifecycle and recovery cases behaved as designed |
 | Robustness and integration evaluation | 28/28 passed; 9/9 malformed cases rejected | No silent errors were detected in the predefined and executed cases |
 | One OPM v4/TXT pair | 205/205 rows; no differences exceeded the predefined tolerances | Shared fields in the two vendor output paths were consistent for the examined run |
 

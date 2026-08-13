@@ -1,5 +1,34 @@
 # Release notes
 
+## Unreleased
+
+Recovery and ingestion fixes on top of 0.9.0. Behaviour under normal operation
+is unchanged; every change concerns what happens after an interrupted run.
+
+### Recovery and durability
+
+- Log recovery indexes every daily file before deciding, so a run whose terminal
+  record was written to a later day is no longer re-recovered on each restart.
+- A staging directory is no longer mistaken for a committed run during
+  duplicate detection, so an interrupted publication can be reprocessed.
+- Startup settles every instrument's QA journal, then discards staging
+  directories left by an interrupted publication. The order is enforced by test:
+  sweeping first would delete a report whose state transaction had committed.
+- Bookkeeping that runs after a report is published can no longer record the run
+  as failed; a surviving journal is settled at the next startup instead.
+
+### Ingestion and dates
+
+- Files published into the watched folder by rename are ingested; previously
+  only creation events were observed.
+- Recalibration expiry clamps to the last valid day of the target month instead
+  of raising on month-end dates.
+
+### Evaluation
+
+- 46/46 regression tests passed. The robustness, malformed-input and OPM/TXT
+  figures below are unchanged from 0.9.0 and were not re-run.
+
 ## 0.9.0 — 2026-08-11
 
 This review snapshot restructures the dissertation code as an English,

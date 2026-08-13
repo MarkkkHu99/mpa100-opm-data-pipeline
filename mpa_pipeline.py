@@ -29,6 +29,7 @@ import json
 import uuid
 import copy
 import hashlib
+import calendar
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -406,9 +407,7 @@ class MeltingPointCalibrator:
             today = datetime.now()
             cd["date_performed"] = today.strftime("%Y-%m-%d")
             months = cd.get("recommended_recalibration_months", 6)
-            exp = today.replace(
-                year=today.year + (today.month - 1 + months) // 12,
-                month=(today.month - 1 + months) % 12 + 1)
+            exp = _add_months(today, months)
             cd["date_expires"] = exp.strftime("%Y-%m-%d")
             self.check_calibration_validity()
 
@@ -1000,6 +999,15 @@ def _pipeline_timestamp():
     return datetime.now().astimezone().isoformat(timespec="milliseconds")
 
 
+def _add_months(moment, months):
+    """Shift a date by whole months, clamping to the last valid day."""
+    total = moment.month - 1 + int(months)
+    year = moment.year + total // 12
+    month = total % 12 + 1
+    day = min(moment.day, calendar.monthrange(year, month)[1])
+    return moment.replace(year=year, month=month, day=day)
+
+
 def append_pipeline_log(record, log_root=None):
     """Append and synchronise one structured record to the daily TXT log."""
     root = log_root or PIPELINE_LOG_ROOT
@@ -1025,16 +1033,23 @@ def append_pipeline_log(record, log_root=None):
 
 
 def recover_incomplete_pipeline_runs(log_root=None):
-    """Recover starts without terminals, scoped to each daily log and idempotent."""
+    """Recover starts without terminals, scoped to each daily log and idempotent.
+
+    Terminals and integrity warnings may be written to today's daily file.
+    A first pass therefore indexes every log so a later restart does not
+    re-recover a run whose terminal already exists in another day's file.
+    """
     root = log_root or PIPELINE_LOG_ROOT
     if not os.path.isdir(root):
         return {"interrupted": 0, "integrity_unknown": 0,
                 "malformed_lines": 0, "warnings_added": 0}
-    interrupted_ids, integrity_ids, malformed_all = [], [], []
-    warnings_added = 0
+
+    indexed = []
+    all_terminals = set()
+    all_warned_locations = set()
+    malformed_all = []
     for path in sorted(Path(root).glob("pipeline_*.txt")):
-        started, terminal, malformed = {}, set(), []
-        warned_locations = set()
+        started, malformed = {}, []
         with path.open("r", encoding="utf-8", errors="replace") as handle:
             for line_number, line in enumerate(handle, 1):
                 if not line.strip():
@@ -1048,15 +1063,20 @@ def recover_incomplete_pipeline_runs(log_root=None):
                 if record.get("event") == "started" and run_id:
                     started[run_id] = record
                 if record.get("event") == "terminal" and run_id:
-                    terminal.add(run_id)
+                    all_terminals.add(run_id)
                 if record.get("event") == "integrity_warning":
                     location = record.get("corrupt_location")
                     if location:
-                        warned_locations.add(location)
-        corruption_present = bool(malformed)
+                        all_warned_locations.add(location)
         malformed_all.extend(malformed)
+        indexed.append((started, malformed))
+
+    interrupted_ids, integrity_ids = [], []
+    warnings_added = 0
+    for started, malformed in indexed:
+        corruption_present = bool(malformed)
         for run_id, record in started.items():
-            if run_id in terminal:
+            if run_id in all_terminals:
                 continue
             if corruption_present:
                 outcome = "integrity_unknown"
@@ -1076,9 +1096,10 @@ def recover_incomplete_pipeline_runs(log_root=None):
                 "outcome": outcome, "failure_stage": "unknown",
                 "reason": reason, "detected_on_restart": True,
             }, root)
+            all_terminals.add(run_id)
         for filename, line_number in malformed:
             location = f"{filename}:{line_number}"
-            if location in warned_locations:
+            if location in all_warned_locations:
                 continue
             append_pipeline_log({
                 "event": "integrity_warning", "run_id": None,
@@ -1089,6 +1110,7 @@ def recover_incomplete_pipeline_runs(log_root=None):
                 "reason": (f"Corrupt log line preserved at {location}; it may hide "
                            "a terminal record. Manual review required."),
             }, root)
+            all_warned_locations.add(location)
             warnings_added += 1
     if malformed_all:
         print(f"INTEGRITY WARNING: {len(malformed_all)} corrupt log line(s) detected; "
@@ -1097,6 +1119,30 @@ def recover_incomplete_pipeline_runs(log_root=None):
             "integrity_unknown": len(integrity_ids),
             "malformed_lines": len(malformed_all),
             "warnings_added": warnings_added}
+
+
+def discard_orphaned_staging_dirs(output_root=None):
+    """Remove staging directories left behind by an interrupted publication.
+
+    Must run after QA transaction recovery, which may still need to promote a
+    staging directory into its final location.
+    """
+    root = Path(output_root or OUTPUT_FOLDER)
+    if not root.is_dir():
+        return 0
+    discarded = 0
+    for candidate in sorted(root.iterdir()):
+        if not candidate.is_dir():
+            continue
+        if not (candidate.name.startswith(".") and ".pending-" in candidate.name):
+            continue
+        try:
+            shutil.rmtree(candidate)
+        except OSError as exc:
+            print(f"WARNING: Could not remove staging directory {candidate}: {exc}")
+            continue
+        discarded += 1
+    return discarded
 
 
 # ====================== Single-channel plotting ======================
@@ -1354,6 +1400,10 @@ class FileHandler(FileSystemEventHandler):
         if not root.is_dir():
             return None
         for manifest in root.glob("*/run_manifest.json"):
+            # Staging directories are hidden and carry a manifest before the
+            # run is published; only a committed directory counts as duplicate.
+            if manifest.parent.name.startswith("."):
+                continue
             try:
                 with manifest.open("r", encoding="utf-8") as handle:
                     record = json.load(handle)
@@ -1447,6 +1497,34 @@ class FileHandler(FileSystemEventHandler):
             raise QAStatePersistenceError(
                 f"Could not recover instrument QA transaction: {exc}") from exc
 
+    def recover_all_qa_transactions(self):
+        """Settle QA journals for every instrument before the watcher starts.
+
+        An instrument whose journal cannot be settled is left uncached, so its
+        next run still fails closed through the normal routing path.
+        """
+        root = Path(QA_STATE_ROOT)
+        if not root.is_dir():
+            return {"recovered": 0, "failed": []}
+        recovered, failed = 0, []
+        for state_dir in sorted(root.iterdir()):
+            if not (state_dir / "qa_transaction.json").exists():
+                continue
+            config_path = state_dir / "qa_state.json"
+            if not config_path.exists():
+                continue
+            try:
+                calibrator = MeltingPointCalibrator(
+                    str(config_path), str(state_dir / "qa_history.jsonl"))
+                self.calibrators[state_dir.name] = self._recover_qa_transaction(
+                    calibrator)
+                recovered += 1
+            except Exception as exc:
+                failed.append(state_dir.name)
+                print(f"ERROR: QA transaction recovery failed for "
+                      f"{state_dir.name}: {exc}")
+        return {"recovered": recovered, "failed": failed}
+
     def _prepare_qa_transaction(self, calibrator, run_id, staging_dir, final_dir):
         if calibrator._pending_snapshot is None or calibrator._pending_state is None:
             raise QAStatePersistenceError("QA run produced no pending state transaction")
@@ -1470,7 +1548,17 @@ class FileHandler(FileSystemEventHandler):
     def on_created(self, event):
         if event.is_directory:
             return
-        ext = os.path.splitext(event.src_path)[1].lower()
+        self._ingest(event.src_path)
+
+    def on_moved(self, event):
+        # MeltView and most backup tools publish a finished file by renaming it
+        # into the watched folder, which arrives as a move rather than a create.
+        if event.is_directory:
+            return
+        self._ingest(event.dest_path)
+
+    def _ingest(self, src_path):
+        ext = os.path.splitext(src_path)[1].lower()
         if ext not in (".txt", ".opm"):
             return
         run_id = f"{datetime.now().strftime('%Y%m%dT%H%M%S')}-{uuid.uuid4().hex[:8]}"
@@ -1478,25 +1566,25 @@ class FileHandler(FileSystemEventHandler):
         try:
             append_pipeline_log({
                 "event": "started", "run_id": run_id,
-                "source_file": os.path.basename(event.src_path),
+                "source_file": os.path.basename(src_path),
                 "source_format": source_format, "decision_path": "pending",
             })
         except Exception as exc:
             print(f"ERROR: Audit log unavailable; file not processed: {exc}")
             return
-        print(f"\nNew file detected; waiting for I/O: {os.path.basename(event.src_path)}")
-        if not wait_for_file_ready(event.src_path):
-            print(f"ERROR: File timeout: {event.src_path}")
+        print(f"\nNew file detected; waiting for I/O: {os.path.basename(src_path)}")
+        if not wait_for_file_ready(src_path):
+            print(f"ERROR: File timeout: {src_path}")
             append_pipeline_log({
                 "event": "terminal", "run_id": run_id,
-                "source_file": os.path.basename(event.src_path),
+                "source_file": os.path.basename(src_path),
                 "source_format": source_format,
                 "decision_path": "rejected_before_routing",
                 "outcome": "failure", "failure_stage": "file_readiness",
                 "reason": "File did not become stable before timeout",
             })
             return
-        self.process_file(event.src_path, run_id=run_id, start_logged=True)
+        self.process_file(src_path, run_id=run_id, start_logged=True)
 
     @staticmethod
     def _has_qa_intent(meta):
@@ -1626,16 +1714,26 @@ class FileHandler(FileSystemEventHandler):
                 os.replace(staging_dir, final_dir)
                 staging_dir = None
                 calibrator.finalize_pending_state()
-                self._transaction_path(calibrator).unlink()
-                append_pipeline_log({
-                    "event": "terminal", "run_id": run_id,
-                    "source_file": source_file, "source_format": source_format,
-                    "instrument_serial_number": instrument_serial,
-                    "source_sha256": source_sha256,
-                    "qa_transaction_id": transaction_id,
-                    "decision_path": "qa_standard", "outcome": "success",
-                    "failure_stage": None, "reason": None,
-                })
+                # The report is published and the state is committed. Everything
+                # below is bookkeeping and must not be reported as a failed run;
+                # a surviving journal is settled on the next startup.
+                try:
+                    self._transaction_path(calibrator).unlink()
+                except OSError as exc:
+                    print(f"WARNING: QA transaction journal not removed: {exc}")
+                try:
+                    append_pipeline_log({
+                        "event": "terminal", "run_id": run_id,
+                        "source_file": source_file, "source_format": source_format,
+                        "instrument_serial_number": instrument_serial,
+                        "source_sha256": source_sha256,
+                        "qa_transaction_id": transaction_id,
+                        "decision_path": "qa_standard", "outcome": "success",
+                        "failure_stage": None, "reason": None,
+                    })
+                except Exception as extra:
+                    print(f"WARNING: QA run published but its terminal audit "
+                          f"record could not be written: {extra}")
                 return True
 
             # ===== Teaching-channel path: instrument-indicated values only =====
@@ -1721,14 +1819,18 @@ class FileHandler(FileSystemEventHandler):
             failure_stage = "output_commit"
             os.replace(staging_dir, final_dir)
             staging_dir = None
-            append_pipeline_log({
-                "event": "terminal", "run_id": run_id,
-                "source_file": source_file, "source_format": source_format,
-                "instrument_serial_number": instrument_serial,
-                "source_sha256": source_sha256,
-                "decision_path": "student", "outcome": "success",
-                "failure_stage": None, "reason": None,
-            })
+            try:
+                append_pipeline_log({
+                    "event": "terminal", "run_id": run_id,
+                    "source_file": source_file, "source_format": source_format,
+                    "instrument_serial_number": instrument_serial,
+                    "source_sha256": source_sha256,
+                    "decision_path": "student", "outcome": "success",
+                    "failure_stage": None, "reason": None,
+                })
+            except Exception as extra:
+                print(f"WARNING: Teaching run published but its terminal audit "
+                      f"record could not be written: {extra}")
             print(f"Success: {name} processed as channel-level teaching output.")
             return True
         except Exception as e:
@@ -1928,6 +2030,11 @@ def main():
     os.makedirs(MONITOR_FOLDER, exist_ok=True)
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     os.makedirs(PIPELINE_LOG_ROOT, exist_ok=True)
+    handler = FileHandler()
+    # QA journals first: recovery may still promote a staging directory that
+    # the sweep below would otherwise delete.
+    qa_recovery = handler.recover_all_qa_transactions()
+    discarded = discard_orphaned_staging_dirs()
     recovery = recover_incomplete_pipeline_runs()
 
     print("=" * 60)
@@ -1941,12 +2048,18 @@ def main():
     print(f"Per-instrument QA root: {QA_STATE_ROOT}")
     print(f"Pipeline log root: {PIPELINE_LOG_ROOT}")
     print(f"Recovered interrupted runs: {recovery['interrupted']}")
+    if qa_recovery["recovered"]:
+        print(f"Settled QA transactions: {qa_recovery['recovered']}")
+    if qa_recovery["failed"]:
+        print("Instruments blocked by unrecoverable QA journals: "
+              f"{', '.join(qa_recovery['failed'])}")
+    if discarded:
+        print(f"Discarded incomplete report staging directories: {discarded}")
     if recovery.get("integrity_unknown"):
         print(f"Runs needing integrity review: {recovery['integrity_unknown']} "
               f"(log corruption detected on {recovery['malformed_lines']} line(s))")
     print("=" * 60)
 
-    handler = FileHandler()
     observer = Observer()
     configure_observer(observer, handler)
     observer.start()

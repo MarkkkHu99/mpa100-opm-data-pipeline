@@ -13,6 +13,7 @@ import json
 import os
 import tempfile
 import pytest
+from datetime import datetime
 
 import mpa_pipeline as mp
 
@@ -379,6 +380,222 @@ def test_log_recovery_is_idempotent(tmp_path):
     assert first["warnings_added"] == 1
     assert second["integrity_unknown"] == 0
     assert second["warnings_added"] == 0
+
+
+def test_log_recovery_is_idempotent_across_calendar_days(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        mp, "_pipeline_timestamp", lambda: "2026-08-13T09:00:00.000+00:00")
+    write_log(str(tmp_path), [
+        json.dumps({"event": "started", "run_id": "R1"}),
+        "{bad json",
+    ])
+    first = mp.recover_incomplete_pipeline_runs(str(tmp_path))
+    second = mp.recover_incomplete_pipeline_runs(str(tmp_path))
+    assert (tmp_path / "pipeline_2026-08-13.txt").exists()
+    assert first["integrity_unknown"] == 1
+    assert first["warnings_added"] == 1
+    assert second["integrity_unknown"] == 0
+    assert second["warnings_added"] == 0
+    assert second["interrupted"] == 0
+
+
+def test_pending_staging_manifest_is_not_a_committed_duplicate(tmp_path, monkeypatch):
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    outputs = tmp_path / "outputs"
+    pending = outputs / ".20260811_QA_VANILLIN.pending-xyz"
+    pending.mkdir(parents=True)
+    (pending / "run_manifest.json").write_text(
+        json.dumps({"source_sha256": "abc123"}), encoding="utf-8")
+    assert mp.FileHandler._find_duplicate("abc123") is None
+
+    final = outputs / "20260811_QA_VANILLIN"
+    final.mkdir()
+    (final / "run_manifest.json").write_text(
+        json.dumps({"source_sha256": "abc123"}), encoding="utf-8")
+    assert mp.FileHandler._find_duplicate("abc123") == str(final)
+
+
+def test_interrupted_publication_can_be_reprocessed(tmp_path, monkeypatch):
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    source = _write_minimal_txt(tmp_path / "teach.txt", "aspirin")
+    real_replace = mp.os.replace
+
+    def hard_interrupt(src, dst):
+        if os.path.isdir(src):
+            raise KeyboardInterrupt("simulated power loss before publication")
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(mp.os, "replace", hard_interrupt)
+    with pytest.raises(KeyboardInterrupt):
+        mp.FileHandler().process_file(str(source))
+    monkeypatch.setattr(mp.os, "replace", real_replace)
+
+    # The leftover staging directory must not mask the retry.
+    assert mp.FileHandler().process_file(str(source)) is True
+    finals = [p for p in (tmp_path / "outputs").iterdir()
+              if p.is_dir() and not p.name.startswith(".")]
+    assert len(finals) == 1
+
+
+def test_orphaned_staging_dirs_are_discarded(tmp_path, monkeypatch):
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    outputs = tmp_path / "outputs"
+    orphan = outputs / ".20260811_run.pending-abc"
+    orphan.mkdir(parents=True)
+    (orphan / "run_manifest.json").write_text("{}", encoding="utf-8")
+    final = outputs / "20260811_run"
+    final.mkdir()
+    (final / "run_manifest.json").write_text("{}", encoding="utf-8")
+
+    assert mp.discard_orphaned_staging_dirs() == 1
+    assert not orphan.exists()
+    assert final.exists()
+
+
+def test_startup_settles_uncommitted_qa_journal(tmp_path, monkeypatch):
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    outputs = tmp_path / "outputs"
+    outputs.mkdir()
+    pending = outputs / ".20260811_QA_VANILLIN.pending-abc"
+    pending.mkdir()
+    state_dir = tmp_path / "states" / "SN-TXN-01"
+    state_dir.mkdir(parents=True)
+    (state_dir / "qa_state.json").write_text(
+        json.dumps({"standards": {"list": []},
+                    "instrument_accuracy_spec": {"ranges": []}}),
+        encoding="utf-8")
+    (state_dir / "qa_transaction.json").write_text(
+        json.dumps({
+            "transaction_id": "qa-R1",
+            "pending_report_dir": str(pending.resolve()),
+            "final_report_dir": str((outputs / "20260811_QA_VANILLIN").resolve()),
+        }), encoding="utf-8")
+
+    result = mp.FileHandler().recover_all_qa_transactions()
+
+    assert result["recovered"] == 1
+    assert result["failed"] == []
+    # Not committed: the staging directory and the journal are both discarded.
+    assert not pending.exists()
+    assert not (state_dir / "qa_transaction.json").exists()
+
+
+def test_qa_journal_cleanup_failure_still_reports_success(tmp_path, monkeypatch):
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    source = _write_minimal_txt(tmp_path / "qa.txt", "QA_VANILLIN")
+    real_unlink = mp.os.unlink
+
+    def lock_journal(path, *args, **kwargs):
+        if str(path).endswith("qa_transaction.json"):
+            raise OSError("simulated journal lock")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(mp.os, "unlink", lock_journal)
+    assert mp.FileHandler().process_file(str(source)) is True
+
+    outcomes = []
+    for log in (tmp_path / "pipeline_logs").iterdir():
+        for line in log.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            if rec.get("event") == "terminal":
+                outcomes.append(rec["outcome"])
+    assert outcomes == ["success"]
+
+
+def test_file_moved_into_folder_is_ingested(tmp_path, monkeypatch):
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    source = _write_minimal_txt(tmp_path / "moved.txt", "aspirin")
+    seen = []
+    monkeypatch.setattr(mp, "wait_for_file_ready", lambda *a, **kw: True)
+    monkeypatch.setattr(mp.FileHandler, "process_file",
+                        lambda self, path, **kw: (seen.append(path), True)[1])
+
+    class _MovedEvent:
+        is_directory = False
+        src_path = str(tmp_path / "partial.tmp")
+        dest_path = str(source)
+
+    mp.FileHandler().on_moved(_MovedEvent())
+    assert seen == [str(source)]
+
+
+@pytest.mark.parametrize("start,months,expected", [
+    ("2026-08-31", 6, "2027-02-28"),
+    ("2026-03-31", 6, "2026-09-30"),
+    ("2026-10-31", 6, "2027-04-30"),
+    ("2026-01-15", 6, "2026-07-15"),
+    ("2024-08-31", 6, "2025-02-28"),
+    ("2026-12-31", 1, "2027-01-31"),
+])
+def test_recalibration_expiry_clamps_to_month_end(start, months, expected):
+    moment = datetime.strptime(start, "%Y-%m-%d")
+    assert mp._add_months(moment, months).strftime("%Y-%m-%d") == expected
+
+
+class _FakeObserver:
+    """Stands in for the watchdog observer so main() can be driven in-process."""
+
+    def schedule(self, handler, path, recursive=False):
+        return None
+
+    def start(self):
+        return None
+
+    def stop(self):
+        return None
+
+    def join(self, timeout=None):
+        return None
+
+
+def _stop_watcher(seconds):
+    raise KeyboardInterrupt
+
+
+def test_startup_publishes_committed_report_before_sweeping_staging(
+        tmp_path, monkeypatch):
+    """Startup must settle QA journals before discarding staging directories.
+
+    A run interrupted between the state commit and the publication leaves the
+    only copy of the report in a staging directory. Sweeping first would delete
+    it while the state still claims the transaction succeeded, and no journal
+    would survive to report the loss.
+    """
+    _configure_pipeline_tmp(tmp_path, monkeypatch)
+    monkeypatch.setattr(mp, "MONITOR_FOLDER", str(tmp_path / "monitor"))
+    monkeypatch.setattr(mp.time, "sleep", _stop_watcher)
+    monkeypatch.setattr(mp, "Observer", _FakeObserver)
+
+    outputs = tmp_path / "outputs"
+    final = outputs / "2026-08-11_QA_VANILLIN"
+    pending = outputs / ".2026-08-11_QA_VANILLIN.pending-abc"
+    pending.mkdir(parents=True)
+    (pending / "run_manifest.json").write_text("{}", encoding="utf-8")
+    (pending / "report.csv").write_text("only copy", encoding="utf-8")
+
+    state_dir = tmp_path / "states" / "SN-TXN-01"
+    state_dir.mkdir(parents=True)
+    (state_dir / "qa_state.json").write_text(
+        json.dumps({"standards": {"list": []},
+                    "instrument_accuracy_spec": {"ranges": []},
+                    "transaction": {"last_committed_id": "qa-R1"}}),
+        encoding="utf-8")
+    (state_dir / "qa_transaction.json").write_text(
+        json.dumps({
+            "transaction_id": "qa-R1",
+            "pending_report_dir": str(pending.resolve()),
+            "final_report_dir": str(final.resolve()),
+            "audit_entry": {"transaction_id": "qa-R1", "event": "qa_run"},
+        }), encoding="utf-8")
+
+    assert mp.main() == 0
+
+    assert final.is_dir(), "committed report was swept away instead of published"
+    assert (final / "report.csv").read_text(encoding="utf-8") == "only copy"
+    assert not pending.exists()
+    assert not (state_dir / "qa_transaction.json").exists()
 
 
 if __name__ == "__main__":

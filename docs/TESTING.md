@@ -51,12 +51,16 @@ underlying physical measurement.
 
 ## Saved release evidence
 
-- Regression suite: 32/32 passed.
+- Regression suite: 46/46 passed.
 - Robustness and integration evaluation: 28/28 passed.
 - Malformed inputs: 9/9 correctly rejected.
 - No silent errors were detected in the predefined and executed cases.
 - One paired OPM v4/TXT run: 205/205 rows and no differences exceeding the
   predefined tolerances.
+
+The regression count rose from the 32/32 recorded for 0.9.0 because the recovery
+and ingestion fixes added cases. The remaining figures are carried over from the
+0.9.0 snapshot and were not re-run.
 
 The tests were run by the author/developer. The evidence does not establish
 universal OPM compatibility, independent verification or real-instrument QA
