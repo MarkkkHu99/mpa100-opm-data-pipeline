@@ -3,7 +3,9 @@
 The public repository does not include the real OPM/TXT pair or derived channel
 reports used for the saved cross-format and end-to-end evaluation. Although the
 reviewed files did not contain a direct student identifier, permission to release
-laboratory instrument files publicly has not been established.
+laboratory instrument files publicly has not been established. For 0.9.1 those
+data-dependent cases were therefore not re-run; the saved 0.9.0 figures remain
+the recorded result.
 
 The repository therefore includes:
 

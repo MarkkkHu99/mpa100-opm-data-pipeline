@@ -1,5 +1,8 @@
 # Robustness test results
 
+Saved from the 0.9.0 snapshot. Not re-run for 0.9.1: the laboratory OPM/TXT pair
+is not in the public repository.
+
 - Tests passed: 28/28
 - Correct rejection rate: 9/9 (100.0%)
 - Silent errors: 0

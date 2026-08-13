@@ -1,5 +1,8 @@
 # OPM–TXT cross-format consistency check
 
+Saved from the 0.9.0 snapshot. Not re-run for 0.9.1: the laboratory OPM/TXT pair
+is not in the public repository.
+
 - Result: PASS
 - Rows: OPM 205, TXT 205
 - Metadata mismatches: 0

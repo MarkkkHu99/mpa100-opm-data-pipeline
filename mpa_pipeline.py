@@ -44,7 +44,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 # Direct OPM parser. Keep opm_parser.py importable alongside this module.
 try:

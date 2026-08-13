@@ -1,7 +1,7 @@
-Snapshot date: 2026-08-11
+Snapshot date: 2026-08-13
 Timezone: Europe/London
-Test platform: Linux x86_64 container
-Python: 3.12.13
+Test platform: Windows 10 (local developer machine)
+Python: 3.13.5
 pytest: 8.4.2
 pandas: 2.2.3
 numpy: 2.3.5
@@ -9,6 +9,11 @@ matplotlib: 3.10.8
 watchdog: 6.0.0
 reportlab: 4.4.9
 Pillow: 12.2.0
+
+The 0.9.0 snapshot was recorded on Linux x86_64 with Python 3.12.13. The
+public regression suite was re-run for 0.9.1 in this environment. The
+data-dependent robustness and OPM/TXT figures remain those saved from 0.9.0,
+because the laboratory pair is not in the public repository.
 
 Runtime paths are deployment-specific and configurable through:
 MPA100_MONITOR_FOLDER

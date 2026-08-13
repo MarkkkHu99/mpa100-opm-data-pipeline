@@ -1,10 +1,11 @@
 {
   "suite": "tests/test_regressions.py",
-  "run_date": "2026-08-11",
-  "python_version": "3.12.13",
+  "software_version": "0.9.1",
+  "run_date": "2026-08-13",
+  "python_version": "3.13.5",
   "pytest_version": "8.4.2",
-  "tests": 32,
-  "passed": 32,
+  "tests": 50,
+  "passed": 50,
   "failed": 0,
   "errors": 0,
   "skipped": 0

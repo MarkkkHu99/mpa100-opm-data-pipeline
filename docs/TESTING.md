@@ -59,9 +59,13 @@ underlying physical measurement.
 - One paired OPM v4/TXT run: 205/205 rows and no differences exceeding the
   predefined tolerances.
 
-The regression count rose from the 32/32 recorded for 0.9.0 because the recovery,
-ingestion and report-layout fixes added cases. The remaining figures are carried
-over from the 0.9.0 snapshot and were not re-run.
+For 0.9.1 the public regression suite was re-run on Windows 10 with Python
+3.13.5: 50/50 passed. The count rose from the 32/32 recorded for 0.9.0 because
+the recovery, ingestion and report-layout fixes added cases.
+
+The robustness, malformed-input and OPM/TXT figures remain those saved from the
+0.9.0 snapshot. They were not re-run here: the laboratory pair is not in the
+public repository (`data-private/` is empty in this working copy).
 
 The tests were run by the author/developer. The evidence does not establish
 universal OPM compatibility, independent verification or real-instrument QA

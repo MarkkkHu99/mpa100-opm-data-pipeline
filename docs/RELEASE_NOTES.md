@@ -1,9 +1,11 @@
 # Release notes
 
-## Unreleased
+## 0.9.1 — 2026-08-13
 
-Recovery and ingestion fixes on top of 0.9.0. Behaviour under normal operation
-is unchanged; every change concerns what happens after an interrupted run.
+Recovery, ingestion and report-layout fixes on top of 0.9.0. Behaviour under
+normal operation is unchanged; every change concerns what happens after an
+interrupted run, how files arrive in the watched folder, and how a channel
+report is laid out.
 
 ### Recovery and durability
 
@@ -36,8 +38,12 @@ is unchanged; every change concerns what happens after an interrupted run.
 
 ### Evaluation
 
-- 50/50 regression tests passed. The robustness, malformed-input and OPM/TXT
-  figures below are unchanged from 0.9.0 and were not re-run.
+- 50/50 regression tests passed on Windows 10 with Python 3.13.5 (author run,
+  2026-08-13). The suite grew from the 32/32 recorded for 0.9.0 because the
+  recovery, ingestion and report-layout fixes added cases.
+- The robustness, malformed-input and OPM/TXT figures below are unchanged from
+  0.9.0. They were not re-run: the laboratory OPM/TXT pair is not in the public
+  repository, and this machine does not hold a local copy.
 
 ## 0.9.0 — 2026-08-11
 
@@ -71,4 +77,3 @@ GitHub-ready repository and preserves the tested v9 behaviour.
   predefined tolerances.
 
 These results are bounded to the executed cases and examined file format.
-
