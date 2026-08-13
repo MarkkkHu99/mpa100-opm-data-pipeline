@@ -1,0 +1,18 @@
+Snapshot date: 2026-08-11
+Timezone: Europe/London
+Test platform: Linux x86_64 container
+Python: 3.12.13
+pytest: 8.4.2
+pandas: 2.2.3
+numpy: 2.3.5
+matplotlib: 3.10.8
+watchdog: 6.0.0
+reportlab: 4.4.9
+Pillow: 12.2.0
+
+Runtime paths are deployment-specific and configurable through:
+MPA100_MONITOR_FOLDER
+MPA100_OUTPUT_FOLDER
+MPA100_QA_STATE_ROOT
+MPA100_PIPELINE_LOG_ROOT
+MPA100_QA_TEMPLATE

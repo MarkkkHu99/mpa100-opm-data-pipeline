@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and editor files
+.venv/
+venv/
+.idea/
+.vscode/
+*.swp
+
+# Runtime and generated outputs
+runtime/
+output/
+outputs/
+Auto_Converted_Results/
+*.pending-*/
+*.tmp
+
+# Laboratory data are local-only unless release is explicitly authorised.
+data-private/*
+!data-private/README.md
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+

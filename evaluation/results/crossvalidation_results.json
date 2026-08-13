@@ -1,0 +1,207 @@
+{
+  "opm_file": "[redacted].opm",
+  "txt_file": "[redacted].txt",
+  "opm_rows": 205,
+  "txt_rows": 205,
+  "row_count_match": true,
+  "channel_column_order_match": true,
+  "metadata_fields_compared": 9,
+  "metadata_mismatches": 0,
+  "detection_points_compared": 9,
+  "detection_point_mismatches": 0,
+  "time_series": {
+    "Time(s)": {
+      "max_absolute_difference": 0.0004999999999881766,
+      "mismatch_count": 0,
+      "tolerance": 0.001
+    },
+    "Temp(C)": {
+      "max_absolute_difference": 0.0004921875000007958,
+      "mismatch_count": 0,
+      "tolerance": 0.001
+    },
+    "Left": {
+      "max_absolute_difference": 4.9942135810845945e-06,
+      "mismatch_count": 0,
+      "tolerance": 1e-05
+    },
+    "Center": {
+      "max_absolute_difference": 4.970957040786872e-06,
+      "mismatch_count": 0,
+      "tolerance": 1e-05
+    },
+    "Right": {
+      "max_absolute_difference": 4.940443038947695e-06,
+      "mismatch_count": 0,
+      "tolerance": 1e-05
+    }
+  },
+  "field_mismatches": 0,
+  "time_series_mismatched_cells": 0,
+  "silent_numerical_errors": 0,
+  "passed": true,
+  "details": [
+    {
+      "category": "metadata",
+      "field": "Chemical name",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": null,
+      "tolerance": "exact",
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Batch number",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": null,
+      "tolerance": "exact",
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Instrument serial number",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": null,
+      "tolerance": "exact",
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Start temperature",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.0,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Stop temperature",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.0,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Heating rate",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.0,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Onset point threshold",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.0,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Single point threshold",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.0,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "metadata",
+      "field": "Clear point threshold",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.0,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Onset point (left)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.014502000000000237,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Onset point (center)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.03930700000000087,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Onset point (right)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.013866999999990526,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Single point (left)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.013477000000008843,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Single point (center)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.008887000000001422,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Single point (right)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.021776999999985946,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Clear point (left)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.02851599999999621,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Clear point (center)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.024120999999993842,
+      "tolerance": 0.05,
+      "matched": true
+    },
+    {
+      "category": "detection_point",
+      "field": "Clear point (right)",
+      "opm_value": "[redacted]",
+      "txt_value": "[redacted]",
+      "absolute_difference": 0.04985399999998208,
+      "tolerance": 0.05,
+      "matched": true
+    }
+  ]
+}

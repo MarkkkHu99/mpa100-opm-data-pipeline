@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "MPA100 OPM Data Pipeline"
+type: software
+authors:
+  - family-names: "Hu"
+    given-names: "Fengyuan"
+version: 0.9.0
+date-released: 2026-08-11
+abstract: >-
+  A research pipeline for traceable channel-level processing of SRS MPA100
+  OptiMelt OPM files and instrument-scoped reference-standard QA checks in a
+  teaching laboratory.
+keywords:
+  - melting point
+  - MPA100
+  - OPM
+  - data provenance
+  - quality assurance
+  - teaching laboratory
+license: "LicenseRef-Pending-Institutional-Confirmation"
+

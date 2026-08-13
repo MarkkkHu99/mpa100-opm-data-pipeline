@@ -1,0 +1,240 @@
+{
+  "total_tests": 28,
+  "passed_tests": 28,
+  "test_pass_rate_percent": 100.0,
+  "valid_cases": 19,
+  "successful_valid_cases": 19,
+  "valid_case_success_rate_percent": 100.0,
+  "invalid_cases": 9,
+  "correct_rejections": 9,
+  "correct_rejection_rate_percent": 100.0,
+  "silent_status_errors": 0,
+  "silent_numerical_errors": 0,
+  "silent_errors": 0,
+  "results": [
+    {
+      "test": "valid_opm",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "205 frames",
+      "elapsed_ms": 4.25
+    },
+    {
+      "test": "opm_bad_magic",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "OPMFormatError: Not an SRS OptiMelt data file",
+      "elapsed_ms": 18.0
+    },
+    {
+      "test": "opm_unsupported_version",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "OPMFormatError: Unsupported OPM format version 99; supported: [4]",
+      "elapsed_ms": 13.31
+    },
+    {
+      "test": "opm_truncated_half",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "OPMFormatError: Invalid image size at frame 102",
+      "elapsed_ms": 5.71
+    },
+    {
+      "test": "opm_truncated_tail",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "OPMFormatError: Invalid image size at frame 204",
+      "elapsed_ms": 12.86
+    },
+    {
+      "test": "opm_invalid_image_size",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "OPMFormatError: Invalid image size at frame 0",
+      "elapsed_ms": 11.63
+    },
+    {
+      "test": "opm_frame_count_mismatch",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "OPMFormatError: Truncated frame header at frame 205",
+      "elapsed_ms": 12.37
+    },
+    {
+      "test": "txt_empty",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "ValueError: TXT contains no supported measurement table",
+      "elapsed_ms": 0.04
+    },
+    {
+      "test": "txt_non_numeric",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "ValueError: could not convert string to float: 'BAD'",
+      "elapsed_ms": 0.75
+    },
+    {
+      "test": "txt_wrong_column_count",
+      "expected": "rejected",
+      "observed": "rejected",
+      "passed": true,
+      "detail": "ValueError: TXT contains no supported measurement table",
+      "elapsed_ms": 0.03
+    },
+    {
+      "test": "txt_minimal_valid",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "1 row",
+      "elapsed_ms": 0.27
+    },
+    {
+      "test": "file_ready_stable",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "True",
+      "elapsed_ms": 150.48
+    },
+    {
+      "test": "file_ready_growing",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "continued waiting until timeout",
+      "elapsed_ms": 378.34
+    },
+    {
+      "test": "file_ready_timeout",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "timeout returned False",
+      "elapsed_ms": 250.71
+    },
+    {
+      "test": "student_output_naming_policy",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "no k=2 CSV label or *_corr keys",
+      "elapsed_ms": 0.49
+    },
+    {
+      "test": "standard_alias_and_false_match",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "explicit alias accepted; unrelated name rejected",
+      "elapsed_ms": 0.26
+    },
+    {
+      "test": "drift_failure_freezes_calibration",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "event logged; fit data and expiry unchanged",
+      "elapsed_ms": 12.04
+    },
+    {
+      "test": "missing_certified_value_fail_closed",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "configuration error rejected fail-closed; state unchanged",
+      "elapsed_ms": 0.16
+    },
+    {
+      "test": "explicit_qa_routing_policy",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "plain caffeine remained student; reserved QA label accepted",
+      "elapsed_ms": 0.24
+    },
+    {
+      "test": "single_folder_monitor_registration",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "one MeltView automatic-save folder registered",
+      "elapsed_ms": 0.04
+    },
+    {
+      "test": "manufacturer_three_standard_completion",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "two standards rejected; complete three-standard set fitted",
+      "elapsed_ms": 0.61
+    },
+    {
+      "test": "manufacturer_per_crs_run_checks",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "valid run accepted; ramp, spread and melting-range failures rejected",
+      "elapsed_ms": 0.08
+    },
+    {
+      "test": "per_instrument_qa_state_isolation",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "SN-A and SN-B received separate state and history paths",
+      "elapsed_ms": 4.73
+    },
+    {
+      "test": "pipeline_rejects_malformed_without_outputs",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "pipeline returned failure and left zero output files",
+      "elapsed_ms": 2.94
+    },
+    {
+      "test": "missing_heating_rate_fail_closed",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "missing required heating rate rejected without outputs",
+      "elapsed_ms": 3.55
+    },
+    {
+      "test": "atomic_output_on_write_failure",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "simulated write failure left zero committed files",
+      "elapsed_ms": 1660.51
+    },
+    {
+      "test": "opm_txt_crossvalidation",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "rows=205; metadata mismatches=0; point mismatches=0; series mismatches=0",
+      "elapsed_ms": 842.75
+    },
+    {
+      "test": "opm_end_to_end_outputs",
+      "expected": "success",
+      "observed": "success",
+      "passed": true,
+      "detail": "PDF=3, CSV=2, PNG=3",
+      "elapsed_ms": 2099.34
+    }
+  ]
+}

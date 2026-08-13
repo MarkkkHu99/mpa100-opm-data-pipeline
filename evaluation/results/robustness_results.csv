@@ -1,0 +1,29 @@
+﻿test,expected,observed,passed,detail,elapsed_ms
+valid_opm,success,success,True,205 frames,4.25
+opm_bad_magic,rejected,rejected,True,OPMFormatError: Not an SRS OptiMelt data file,18.0
+opm_unsupported_version,rejected,rejected,True,OPMFormatError: Unsupported OPM format version 99; supported: [4],13.31
+opm_truncated_half,rejected,rejected,True,OPMFormatError: Invalid image size at frame 102,5.71
+opm_truncated_tail,rejected,rejected,True,OPMFormatError: Invalid image size at frame 204,12.86
+opm_invalid_image_size,rejected,rejected,True,OPMFormatError: Invalid image size at frame 0,11.63
+opm_frame_count_mismatch,rejected,rejected,True,OPMFormatError: Truncated frame header at frame 205,12.37
+txt_empty,rejected,rejected,True,ValueError: TXT contains no supported measurement table,0.04
+txt_non_numeric,rejected,rejected,True,ValueError: could not convert string to float: 'BAD',0.75
+txt_wrong_column_count,rejected,rejected,True,ValueError: TXT contains no supported measurement table,0.03
+txt_minimal_valid,success,success,True,1 row,0.27
+file_ready_stable,success,success,True,True,150.48
+file_ready_growing,success,success,True,continued waiting until timeout,378.34
+file_ready_timeout,success,success,True,timeout returned False,250.71
+student_output_naming_policy,success,success,True,no k=2 CSV label or *_corr keys,0.49
+standard_alias_and_false_match,success,success,True,explicit alias accepted; unrelated name rejected,0.26
+drift_failure_freezes_calibration,success,success,True,event logged; fit data and expiry unchanged,12.04
+missing_certified_value_fail_closed,success,success,True,configuration error rejected fail-closed; state unchanged,0.16
+explicit_qa_routing_policy,success,success,True,plain caffeine remained student; reserved QA label accepted,0.24
+single_folder_monitor_registration,success,success,True,one MeltView automatic-save folder registered,0.04
+manufacturer_three_standard_completion,success,success,True,two standards rejected; complete three-standard set fitted,0.61
+manufacturer_per_crs_run_checks,success,success,True,"valid run accepted; ramp, spread and melting-range failures rejected",0.08
+per_instrument_qa_state_isolation,success,success,True,SN-A and SN-B received separate state and history paths,4.73
+pipeline_rejects_malformed_without_outputs,success,success,True,pipeline returned failure and left zero output files,2.94
+missing_heating_rate_fail_closed,success,success,True,missing required heating rate rejected without outputs,3.55
+atomic_output_on_write_failure,success,success,True,simulated write failure left zero committed files,1660.51
+opm_txt_crossvalidation,success,success,True,rows=205; metadata mismatches=0; point mismatches=0; series mismatches=0,842.75
+opm_end_to_end_outputs,success,success,True,"PDF=3, CSV=2, PNG=3",2099.34

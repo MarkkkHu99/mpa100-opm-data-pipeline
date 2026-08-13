@@ -1,0 +1,90 @@
+{
+  "schema_version": 2,
+  "template_role": "definitions_only",
+  "source": {
+    "document": "SRS MPA100 OptiMelt Operation and Service Manual",
+    "revision": "3.4 (1/2026)",
+    "url": "https://www.thinksrs.com/downloads/pdfs/manuals/MPA100m.pdf",
+    "sections": [
+      "Chapter 4 - Acceptability Test",
+      "Appendix B - O100MPS CRS Kit"
+    ]
+  },
+  "instrument_accuracy_spec": {
+    "label": "manufacturer accuracy specification; not expanded uncertainty",
+    "ranges": [
+      {
+        "min_C": null,
+        "max_C": 100.0,
+        "max_inclusive": false,
+        "accuracy_C": 0.3
+      },
+      {
+        "min_C": 100.0,
+        "max_C": 250.0,
+        "min_inclusive": true,
+        "max_inclusive": true,
+        "accuracy_C": 0.5
+      },
+      {
+        "min_C": 250.0,
+        "max_C": null,
+        "min_inclusive": false,
+        "accuracy_C": 0.8
+      }
+    ]
+  },
+  "standards": {
+    "list": [
+      {
+        "name": "vanillin",
+        "aliases": ["vanillin"],
+        "certified_clear_point_C": 83.0,
+        "expected_start_C": 78.0,
+        "expected_stop_C": 88.0,
+        "ramp_rate_C_min": 1.0,
+        "temperature_tolerance_C": 0.11,
+        "three_capillary_max_spread_C": 0.3,
+        "max_melting_range_C": 2.0
+      },
+      {
+        "name": "phenacetin",
+        "aliases": ["phenacetin", "acetophenetidin"],
+        "certified_clear_point_C": 135.9,
+        "expected_start_C": 131.0,
+        "expected_stop_C": 141.0,
+        "ramp_rate_C_min": 1.0,
+        "temperature_tolerance_C": 0.11,
+        "three_capillary_max_spread_C": 0.3,
+        "max_melting_range_C": 2.0
+      },
+      {
+        "name": "caffeine",
+        "aliases": ["caffeine"],
+        "certified_clear_point_C": 237.0,
+        "expected_start_C": 232.0,
+        "expected_stop_C": 242.0,
+        "ramp_rate_C_min": 1.0,
+        "temperature_tolerance_C": 0.11,
+        "three_capillary_max_spread_C": 0.3,
+        "max_melting_range_C": 2.0
+      }
+    ]
+  },
+  "calibration_curve": {
+    "status": "NEEDS_MEASUREMENT",
+    "parameters": {
+      "slope": null,
+      "slope_uncertainty": null,
+      "intercept": null,
+      "intercept_uncertainty": null
+    },
+    "goodness_of_fit": {
+      "r_squared": null,
+      "rmse": null
+    }
+  },
+  "calibration_data": {
+    "recommended_recalibration_months": 6
+  }
+}

@@ -1,0 +1,6 @@
+pandas==2.2.3
+numpy==2.3.5
+matplotlib==3.10.8
+watchdog==6.0.0
+reportlab==4.4.9
+Pillow==12.2.0

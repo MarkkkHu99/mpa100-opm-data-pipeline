@@ -1,0 +1,19 @@
+﻿category,field,opm_value,txt_value,absolute_difference,tolerance,matched
+metadata,Chemical name,[redacted],[redacted],,exact,True
+metadata,Batch number,[redacted],[redacted],,exact,True
+metadata,Instrument serial number,[redacted],[redacted],,exact,True
+metadata,Start temperature,[redacted],[redacted],0.0,0.05,True
+metadata,Stop temperature,[redacted],[redacted],0.0,0.05,True
+metadata,Heating rate,[redacted],[redacted],0.0,0.05,True
+metadata,Onset point threshold,[redacted],[redacted],0.0,0.05,True
+metadata,Single point threshold,[redacted],[redacted],0.0,0.05,True
+metadata,Clear point threshold,[redacted],[redacted],0.0,0.05,True
+detection_point,Onset point (left),[redacted],[redacted],0.014502000000000237,0.05,True
+detection_point,Onset point (center),[redacted],[redacted],0.03930700000000087,0.05,True
+detection_point,Onset point (right),[redacted],[redacted],0.013866999999990526,0.05,True
+detection_point,Single point (left),[redacted],[redacted],0.013477000000008843,0.05,True
+detection_point,Single point (center),[redacted],[redacted],0.008887000000001422,0.05,True
+detection_point,Single point (right),[redacted],[redacted],0.021776999999985946,0.05,True
+detection_point,Clear point (left),[redacted],[redacted],0.02851599999999621,0.05,True
+detection_point,Clear point (center),[redacted],[redacted],0.024120999999993842,0.05,True
+detection_point,Clear point (right),[redacted],[redacted],0.04985399999998208,0.05,True
